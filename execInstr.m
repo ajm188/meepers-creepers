@@ -51,7 +51,11 @@ switch (opCode(instr))
                 % srav
             case hex2dec('8')
                 % jr
+            case hex2dec('C')
+                % syscall
+                disp('syscall');
             otherwise
+                disp(funct(instr));
                 % error. wtf happened?
                 return;
         end
