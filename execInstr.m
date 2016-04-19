@@ -4,8 +4,9 @@
 % set documentation. The regidx2name() function will properly handle
 % these modified indices.
 
-function execInstr(regs, instr)
+function cpustate = execInstr(cpustate, instr)
 dumpOpcode(instr);
+dumpRegs(cpustate.regs);
 
 % Unpack I and J forms now since they don't conflict with each other.
 % We'll use the correct unpacked form when executing.
@@ -13,7 +14,7 @@ dumpOpcode(instr);
 address = unpackJ(instr);
 
 % TODO(Cam): Fix signedness and overflow/underflow behavior of arithmetic
-% instructions
+% instructions. Fix arithmetic shift behavior.
 switch (opCode(instr))
     case hex2dec('0')
         % R-type instruction. Have to switch on funct
@@ -21,16 +22,16 @@ switch (opCode(instr))
         switch (funct)
             case hex2dec('20')
                 % add
-                regs(rd) = regs(rs) + regs(rt);
+                cpustate.regs(rd) = cpustate.regs(rs) + cpustate.regs(rt);
             case hex2dec('21')
                 % addu
-                regs(rd) = regs(rs) + regs(rt);
+                cpustate.regs(rd) = cpustate.regs(rs) + cpustate.regs(rt);
             case hex2dec('22')
                 % sub
-                regs(rd) = regs(rs) - regs(rt);
+                cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
             case hex2dec('23')
                 % subu
-                regs(rd) = regs(rs) - regs(rt);
+                cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
             case hex2dec('18')
                 % mult
             case hex2dec('19')
@@ -45,40 +46,40 @@ switch (opCode(instr))
                 % mflo
             case hex2dec('24')
                 % and
-                regs(rd) = bitand(regs(rs), regs(rt), 'int32');
+                cpustate.regs(rd) = bitand(cpustate.regs(rs), cpustate.regs(rt), 'int32');
             case hex2dec('25')
                 % or
-                regs(rd) = bitor(regs(rs), regs(rt), 'int32');
+                cpustate.regs(rd) = bitor(cpustate.regs(rs), cpustate.regs(rt), 'int32');
             case hex2dec('26')
                 % xor
-                regs(rd) = bitxor(regs(rs), regs(rt), 'int32');
+                cpustate.regs(rd) = bitxor(cpustate.regs(rs), cpustate.regs(rt), 'int32');
             case hex2dec('27')
                 % nor
-                regs(rd) = bitcmp(bitor(regs(rs), regs(rt), 'int32'), 'int32');
+                cpustate.regs(rd) = bitcmp(bitor(cpustate.regs(rs), cpustate.regs(rt), 'int32'), 'int32');
             case hex2dec('2A')
                 % slt
-                regs(rd) = (regs(rs) < regs(rt));
+                cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
             case hex2dec('2B')
                 % sltu
-                regs(rd) = (regs(rs) < regs(rt));
+                cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
             case hex2dec('0') % Unnecessary, but consistent.
                 % sll
-                regs(rd) = bitsll(regs(rt), shamt);
+                cpustate.regs(rd) = bitshift(cpustate.regs(rt), shamt);
             case hex2dec('2')
                 % srl
-                regs(rd) = bitsrl(regs(rt), shamt);
+                cpustate.regs(rd) = bitshift(cpustate.regs(rt), -shamt);
             case hex2dec('3')
                 % sra
-                regs(rd) = bitsra(regs(rt), shamt);
+                cpustate.regs(rd) = bitshift(cpustate.regs(rt), -shamt);
             case hex2dec('4')
                 % sllv
-                regs(rd) = bitsll(regs(rt), regs(rs));
+                cpustate.regs(rd) = bitshift(cpustate.regs(rt), cpustate.regs(rs));
             case hex2dec('6')
                 % srlv
-                regs(rd) = bitsrl(regs(rt), regs(rs));
+                cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
             case hex2dec('7')
                 % srav
-                regs(rd) = bitsra(regs(rt), regs(rs));
+                cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
             case hex2dec('8')
                 % jr
             case hex2dec('C')
@@ -90,10 +91,10 @@ switch (opCode(instr))
         end
     case hex2dec('8')
         % addi
-        regs(rt) = regs(rs) + immediate;
+        cpustate.regs(rt) = cpustate.regs(rs) + immediate;
     case hex2dec('9')
         % addiu
-        regs(rt) = regs(rs) + immediate;
+        cpustate.regs(rt) = cpustate.regs(rs) + immediate;
     case hex2dec('23')
         % lw
     case hex2dec('21')
@@ -112,16 +113,16 @@ switch (opCode(instr))
         % sb
     case hex2dec('F')
         % lui
-        regs(rt) = bitsll(immediate, 16);
+        cpustate.regs(rt) = bitshift(immediate, 16);
     case hex2dec('C')
         % andi
-        regs(rt) = bitand(regs(rs), immediate);
+        cpustate.regs(rt) = bitand(cpustate.regs(rs), immediate);
     case hex2dec('D')
         % ori
-        regs(rt) = bitor(regs(rs), immediate);
+        cpustate.regs(rt) = bitor(cpustate.regs(rs), immediate);
     case hex2dec('A')
         % slti
-        regs(rt) = (regs(rs) < immediate);
+        cpustate.regs(rt) = (cpustate.regs(rs) < immediate);
     case hex2dec('4')
         % beq
     case hex2dec('5')
@@ -314,3 +315,9 @@ names = {'zero', 'at', 'v0', 'v1', 'a0', 'a1', 'a2', 'a3', 't0', 't1', 't2', 't3
 name = names{regidx};
 end
 
+% Dumps register values
+function dumpRegs(regs)
+for i = 1:length(regs)
+    fprintf('%s = 0x%08x = %d\n', regidx2name(i), regs(i), regs(i));
+end
+end
