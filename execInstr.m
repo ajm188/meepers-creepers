@@ -110,14 +110,19 @@ switch (opCode(instr))
         cpustate.regs(rt) = cpustate.regs(rs) + immediate;
     case hex2dec('23')
         % lw
+        cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 4);
     case hex2dec('21')
         % lh
+        cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 2);
     case hex2dec('25')
         % lhu
+        cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 2);
     case hex2dec('20')
         % lb
+        cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 1);
     case hex2dec('24')
         % lbu
+        cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 1);
     case hex2dec('2B')
         % sw
     case hex2dec('29')

@@ -1,4 +1,4 @@
-function words = loadBinary(path)
+function words = loadBinary(path, type)
 %LOADBINARY Load data from a file in binary format.
 %           Returns an array of words (4 bytes).
 %
@@ -9,6 +9,6 @@ if fd < 1
     words = [];
     return
 end
-words = fread(fd, Inf, '*uint');
+words = fread(fd, Inf, type);
 fclose(fd);
 end

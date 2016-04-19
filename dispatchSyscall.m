@@ -13,7 +13,7 @@ switch (cpustate.regs(Register.v0))
         disp('print_double is unsupported');
     case 4
         % print_string
-        fprintf('UNIMPLEMENTED: print_string(0x%08x)\n', cpustate.regs(Register.a0));
+        fprintf('%s', readString(cpustate, cpustate.regs(Register.a0)));
     case 5
         % read_int
         cpustate.regs(Register.v0) = input('');
