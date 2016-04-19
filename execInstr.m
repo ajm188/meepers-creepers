@@ -84,6 +84,7 @@ switch (opCode(instr))
                 % jr
             case hex2dec('C')
                 % syscall
+                cpustate = dispatchSyscall(cpustate);
             otherwise
                 disp(funct(instr));
                 % error. wtf happened?
