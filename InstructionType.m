@@ -16,4 +16,3 @@ classdef (Sealed) InstructionType
     end
     
 end
-
