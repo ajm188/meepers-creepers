@@ -2,9 +2,10 @@ function str = readString(cpustate, address)
 
 [pageIndex, pageOffset] = getPageIndexAndOffset(cpustate, address);
 
-page = cpustate.pages{pageIndex};
+pageData = cpustate.pages{pageIndex}.data;
 
 str = [];
-while page(pageOffset) ~= 0
-    str = [str char(page(pageOffset))];
+while pageData(pageOffset) ~= 0
+    str = [str char(pageData(pageOffset))];
+    pageOffset = pageOffset + 1;
 end

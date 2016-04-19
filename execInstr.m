@@ -153,6 +153,7 @@ switch (opCode(instr))
         % error. wtf happened?
         exit(-1);
 end
+cpustate.pc = cpustate.pc + 4;
 end
 
 function type = instrType(instr)
