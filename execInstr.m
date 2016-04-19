@@ -5,8 +5,8 @@
 % these modified indices.
 
 function cpustate = execInstr(cpustate, instr)
-dumpOpcode(instr);
 dumpRegs(cpustate.regs);
+dumpOpcode(instr);
 
 % Unpack I and J forms now since they don't conflict with each other.
 % We'll use the correct unpacked form when executing.
@@ -318,6 +318,9 @@ end
 % Dumps register values
 function dumpRegs(regs)
 for i = 1:length(regs)
-    fprintf('%s = 0x%08x = %d\n', regidx2name(i), regs(i), regs(i));
+    % Only print registers that have a value
+    if regs(i)
+        fprintf('$%s = 0x%08x = %d\n', regidx2name(i), regs(i), regs(i));
+    end
 end
 end
