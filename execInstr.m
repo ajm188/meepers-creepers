@@ -1,9 +1,10 @@
 function execInstr(instr)
 
 switch (opCode(instr))
-    case 0
+    case hex2dec('0')
         % R-type instruction. Have to switch on funct
-        switch (funct(instr))
+        [rs, rt, rd, shamt, funct] = unpackR(instr);
+        switch (funct)
             case hex2dec('20')
                 % add
                 disp('add');
@@ -59,9 +60,9 @@ switch (opCode(instr))
                 % error. wtf happened?
                 return;
         end
-    case 8
+    case hex2dec('8')
         % addi
-    case 9
+    case hex2dec('9')
         % addiu
         disp('addiu');
     case hex2dec('23')
@@ -102,13 +103,6 @@ switch (opCode(instr))
 end
 end
 
-function ft = funct(instr)
-%FUNCT Return the funct of an instruction. This is the last six bits.
-%      Instr MUST be an R-TYPE instruction. R-instructions are the only
-%      instructions with a funct.
-ft = bin2int(bitget(instr, 6:-1:1));
-end
-
 function type = instrType(instr)
 %INSTRTYPE Returns the type of instruction, as defined by the enum in
 %          InstructionType.
@@ -134,3 +128,29 @@ function op = opCode(instr)
 %       The op code is the first six bits.
 op = bin2int(bitget(instr, 32:-1:27));
 end
+
+function [rs, rt, rd, shamt, funct] = unpackR(instr)
+% Extracts parameters from an R-type instruction
+% These instructions contain 3 registers, a constant offset, and a function
+% code
+rs = bin2int(bitget(instr, 26:-1:22));
+rt = bin2int(bitget(instr, 21:-1:17));
+rd = bin2int(bitget(instr, 16:-1:12));
+shamt = bin2int(bitget(instr, 11:-1:7));
+funct = bin2int(bitget(instr, 6:-1:1));
+end
+
+function [rs, rt, immediate] = unpackI(instr)
+% Extracts parameters from an I-type instruction
+% These instructions contain 2 registers and an immediate value
+rs = bin2int(bitget(instr, 26:-1:22));
+rt = bin2int(bitget(instr, 21:-1:17));
+immediate = bin2int(bitget(instr, 16:-1:1));
+end
+
+function address = unpackJ(instr)
+% Extracts parameters from an J-type instruction
+% These instructions contain a jump target only.
+address = bin2int(bitget(instr, 26:-1:1));
+end
+
