@@ -1,10 +1,19 @@
-function execInstr(instr)
 % NOTE(Cam): Because Matlab uses 1-index arrays, I'm fixing up
 % the register indices by adding 1 as they're unpacked. This means
 % the numbers will be off by one when compared raw with the instruction
 % set documentation. The regidx2name() function will properly handle
 % these modified indices.
 
+function execInstr(regs, instr)
+dumpOpcode(instr);
+
+% Unpack I and J forms now since they don't conflict with each other.
+% We'll use the correct unpacked form when executing.
+[rs, rt, immediate] = unpackI(instr);
+address = unpackJ(instr);
+
+% TODO(Cam): Fix signedness and overflow/underflow behavior of arithmetic
+% instructions
 switch (opCode(instr))
     case hex2dec('0')
         % R-type instruction. Have to switch on funct
@@ -12,13 +21,16 @@ switch (opCode(instr))
         switch (funct)
             case hex2dec('20')
                 % add
-                disp('add');
+                regs(rd) = regs(rs) + regs(rt);
             case hex2dec('21')
                 % addu
+                regs(rd) = regs(rs) + regs(rt);
             case hex2dec('22')
                 % sub
+                regs(rd) = regs(rs) - regs(rt);
             case hex2dec('23')
                 % subu
+                regs(rd) = regs(rs) - regs(rt);
             case hex2dec('18')
                 % mult
             case hex2dec('19')
@@ -33,43 +45,55 @@ switch (opCode(instr))
                 % mflo
             case hex2dec('24')
                 % and
+                regs(rd) = bitand(regs(rs), regs(rt), 'int32');
             case hex2dec('25')
                 % or
+                regs(rd) = bitor(regs(rs), regs(rt), 'int32');
             case hex2dec('26')
                 % xor
+                regs(rd) = bitxor(regs(rs), regs(rt), 'int32');
             case hex2dec('27')
                 % nor
+                regs(rd) = bitcmp(bitor(regs(rs), regs(rt), 'int32'), 'int32');
             case hex2dec('2A')
                 % slt
+                regs(rd) = (regs(rs) < regs(rt));
             case hex2dec('2B')
                 % sltu
+                regs(rd) = (regs(rs) < regs(rt));
             case hex2dec('0') % Unnecessary, but consistent.
                 % sll
+                regs(rd) = bitsll(regs(rt), shamt);
             case hex2dec('2')
                 % srl
+                regs(rd) = bitsrl(regs(rt), shamt);
             case hex2dec('3')
                 % sra
+                regs(rd) = bitsra(regs(rt), shamt);
             case hex2dec('4')
                 % sllv
+                regs(rd) = bitsll(regs(rt), regs(rs));
             case hex2dec('6')
                 % srlv
+                regs(rd) = bitsrl(regs(rt), regs(rs));
             case hex2dec('7')
                 % srav
+                regs(rd) = bitsra(regs(rt), regs(rs));
             case hex2dec('8')
                 % jr
             case hex2dec('C')
                 % syscall
-                disp('syscall');
             otherwise
                 disp(funct(instr));
                 % error. wtf happened?
-                return;
+                exit(-1);
         end
     case hex2dec('8')
         % addi
+        regs(rt) = regs(rs) + immediate;
     case hex2dec('9')
         % addiu
-        disp('addiu');
+        regs(rt) = regs(rs) + immediate;
     case hex2dec('23')
         % lw
     case hex2dec('21')
@@ -88,12 +112,16 @@ switch (opCode(instr))
         % sb
     case hex2dec('F')
         % lui
+        regs(rt) = bitsll(immediate, 16);
     case hex2dec('C')
         % andi
+        regs(rt) = bitand(regs(rs), immediate);
     case hex2dec('D')
         % ori
+        regs(rt) = bitor(regs(rs), immediate);
     case hex2dec('A')
         % slti
+        regs(rt) = (regs(rs) < immediate);
     case hex2dec('4')
         % beq
     case hex2dec('5')
@@ -104,7 +132,7 @@ switch (opCode(instr))
         % jal
     otherwise
         % error. wtf happened?
-        return;
+        exit(-1);
 end
 end
 
