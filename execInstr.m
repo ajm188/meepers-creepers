@@ -34,16 +34,28 @@ switch (opCode(instr))
                 cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
             case hex2dec('18')
                 % mult
+                product = cpustate.regs(rs) * cpustate.regs(rt);
+                cpustate.reg_lo = int32(product);
+                cpustate.reg_hi = int32(bitshift(product, -32));
             case hex2dec('19')
                 % multu
+                product = cpustate.regs(rs) * cpustate.regs(rt);
+                cpustate.reg_lo = uint32(product);
+                cpustate.reg_hi = uint32(bitshift(product, -32));
             case hex2dec('1A')
                 % div
+                cpustate.reg_lo = cpustate.regs(rs) / cpustate.regs(rt);
+                cpustate.reg_hi = mod(cpustate.regs(rs), cpustate.regs(rt));
             case hex2dec('1B')
                 % divu
+                cpustate.reg_lo = cpustate.regs(rs) / cpustate.regs(rt);
+                cpustate.reg_hi = mod(cpustate.regs(rs), cpustate.regs(rt));
             case hex2dec('10')
                 % mfhi
+                cpustate.regs(rd) = cpustate.reg_hi;
             case hex2dec('12')
                 % mflo
+                cpustate.regs(rd) = cpustate.reg_lo;
             case hex2dec('24')
                 % and
                 cpustate.regs(rd) = bitand(cpustate.regs(rs), cpustate.regs(rt), 'int32');
@@ -62,7 +74,7 @@ switch (opCode(instr))
             case hex2dec('2B')
                 % sltu
                 cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
-            case hex2dec('0') % Unnecessary, but consistent.
+            case hex2dec('0')
                 % sll
                 cpustate.regs(rd) = bitshift(cpustate.regs(rt), shamt);
             case hex2dec('2')
