@@ -98,9 +98,9 @@ switch (opCode(instr))
                 % syscall
                 cpustate = dispatchSyscall(cpustate);
             otherwise
-                disp(funct(instr));
-                % error. wtf happened?
-                exit(-1);
+                % Illegal instruction - halt core
+                disp(instr);
+                cpustate.halted = 1;
         end
     case hex2dec('8')
         % addi
@@ -150,8 +150,9 @@ switch (opCode(instr))
     case hex2dec('3')
         % jal
     otherwise
-        % error. wtf happened?
-        exit(-1);
+        % Illegal instruction - halt core
+        disp(instr);
+        cpustate.halted = 1;
 end
 cpustate.pc = cpustate.pc + 4;
 end
