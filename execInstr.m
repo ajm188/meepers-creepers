@@ -153,13 +153,13 @@ switch (opCode(instr))
         % beq
         cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
         if (cpustate.regs(rs) == cpustate.regs(rt))
-            cpustate.pc = computeBranchTarget(cpustate.pc-4, address);
+            cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
         end
     case hex2dec('5')
         % bne
         cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
         if (cpustate.regs(rs) ~= cpustate.regs(rt))
-            cpustate.pc = computeBranchTarget(cpustate.pc-4, address);
+            cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
         end
     case hex2dec('2')
         % j
