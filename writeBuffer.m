@@ -1,4 +1,4 @@
-function writeBuffer(cpustate, address, length, data)
+function cpustate = writeBuffer(cpustate, address, length, data)
 
 [pageIndex, pageOffset] = getPageIndexAndOffset(cpustate, address);
 

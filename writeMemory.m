@@ -1,4 +1,4 @@
-function data = writeMemory(cpustate, address, length, data)
+function cpustate = writeMemory(cpustate, address, length, data)
 
 [pageIndex, pageOffset] = getPageIndexAndOffset(cpustate, address);
 

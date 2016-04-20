@@ -26,11 +26,12 @@ switch (cpustate.regs(Register.v0))
     case 8
         % read_string
         data = input('', 's');
-        writeString(cpustate, cpustate.regs(Register.a0), ...
+        cpustate = writeString(cpustate, cpustate.regs(Register.a0), ...
             cpustate.regs(Register.a1), data);
     case 9
         % sbrk (memory allocation)
         pageindex = length(cpustate.pages)+1;
+        cpustate.pages{pageindex}.name = 'Dynamic Allocation (sbrk)';
         cpustate.pages{pageindex}.base_address = cpustate.next_allocation_address;
         cpustate.pages{pageindex}.data = zeros(cpustate.regs(Register.a0), 1, 'uint8');
         cpustate.next_allocation_address = cpustate.next_allocation_address + cpustate.regs(Register.a0);
@@ -59,7 +60,7 @@ switch (cpustate.regs(Register.v0))
     case 14
         % read
         readdata = fread(cpustate.regs(Register.a0), cpustate.regs(Register.a2));
-        writeBuffer(cpustate, cpustate.regs(Register.a1), length(readdata), readdata);
+        cpustate = writeBuffer(cpustate, cpustate.regs(Register.a1), length(readdata), readdata);
         cpustate.regs(Register.v0) = length(readdata);
     case 15
         % write
@@ -82,7 +83,7 @@ switch (cpustate.regs(Register.v0))
         fd = cpustate.regs(Register.a0);
         buffAddr = cpustate.regs(Register.a1);
         maxLen = cpustate.regs(Register.a2);
-        socket = cpustate.sockets(fd);
+        socket = cpustate.sockets{fd};
         bytes = readBuffer(cpustate, buffAddr, maxLen);
         socket.getOutputStream().write(bytes);
         cpustate.regs(Register.v1) = length(bytes);
@@ -95,10 +96,10 @@ switch (cpustate.regs(Register.v0))
         fd = cpustate.regs(Register.a0);
         buffAddr = cpustate.regs(Register.a1);
         maxLen = cpustate.regs(Register.a2);
-        socket = cpustate.sockets(fd);
+        socket = cpustate.sockets{fd};
         buff = zeros(1, maxLen, 'uint8');
         bytesRead = socket.getInputStream().read(buff);
-        writeBuffer(cpustate, buffAddr, bytesRead, buff);
+        cpustate = writeBuffer(cpustate, buffAddr, bytesRead, buff);
         cpustate.regs(Register.v1) = bytesRead;
     case 103
         % sock_close
@@ -119,17 +120,17 @@ switch (cpustate.regs(Register.v0))
         % server socket fd in $a0
         % put client socket fd in $v1
         fd = cpustate.regs(Register.a0);
-        server = cpustate.sockets(fd);
+        server = cpustate.sockets{fd};
         client = server.accept;
-        [cpustate, client_fd] = addSocket(client, fd);
+        [cpustate, client_fd] = addSocket(cpustate, client);
         cpustate.regs(Register.v1) = client_fd;
     case 120
         % sock_close_all
         % close all open server sockets
         for i = 1:length(cpustate.sockets)
-            cpustate.sockets(i).close();
+            cpustate.sockets{i}.close();
         end
-        cpustate.sockets = [];
+        cpustate.sockets = {};
     otherwise
         fprintf('Invalid syscall index: %d\n', cpustate.regs(Register.v0));
 end

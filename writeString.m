@@ -1,4 +1,4 @@
-function writeString(cpustate, address, length, string)
+function cpustate = writeString(cpustate, address, length, string)
 
 [pageIndex, pageOffset] = getPageIndexAndOffset(cpustate, address);
 

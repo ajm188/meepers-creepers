@@ -130,13 +130,13 @@ switch (opCode(instr))
         cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 1);
     case hex2dec('2B')
         % sw
-        writeMemory(cpustate, cpustate.regs(rs) + immediate, 4, cpustate.regs(rt));
+        cpustate = writeMemory(cpustate, cpustate.regs(rs) + immediate, 4, cpustate.regs(rt));
     case hex2dec('29')
         % sh
-        writeMemory(cpustate, cpustate.regs(rs) + immediate, 2, cpustate.regs(rt));
+        cpustate = writeMemory(cpustate, cpustate.regs(rs) + immediate, 2, cpustate.regs(rt));
     case hex2dec('28')
         % sb
-        writeMemory(cpustate, cpustate.regs(rs) + immediate, 1, cpustate.regs(rt));
+        cpustate = writeMemory(cpustate, cpustate.regs(rs) + immediate, 1, cpustate.regs(rt));
     case hex2dec('F')
         % lui
         cpustate.regs(rt) = bitshift(immediate, 16);
@@ -324,9 +324,11 @@ switch (opCode(instr))
     case hex2dec('A')
         fprintf('slti');
     case hex2dec('4')
-        fprintf('beq $%s $%s %04x\n', regidx2name(rs), regidx2name(rt), immediate);
+        fprintf('beq $%s $%s 0x%04x\n', regidx2name(rs), regidx2name(rt), immediate);
+        return;
     case hex2dec('5')
-        fprintf('bne $%s $%s %04x\n', regidx2name(rs), regidx2name(rt), immediate);
+        fprintf('bne $%s $%s 0x%04x\n', regidx2name(rs), regidx2name(rt), immediate);
+        return;
     otherwise
         switch (opCode(instr))
             case hex2dec('2')
@@ -338,7 +340,7 @@ switch (opCode(instr))
                 disp(instr);
                 return;
         end
-        fprintf(' %08x\n', address);
+        fprintf(' 0x%08x\n', address);
         return;
 end
 fprintf(' $%s %d($%s)\n', regidx2name(rt), immediate, regidx2name(rs));
@@ -365,5 +367,5 @@ end
 
 % Compute branch target
 function target = computeBranchTarget(pc, offset)
-target = bitand(pc, bitcmp(hex2dec('F0000000'))) + (offset*4);
+target = bitand(pc, hex2dec('F0000000')) + (offset*4);
 end

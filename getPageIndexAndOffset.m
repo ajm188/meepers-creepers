@@ -1,4 +1,4 @@
-function [index offset] = getPageIndexAndOffset(cpustate, address)
+function [index, offset] = getPageIndexAndOffset(cpustate, address)
 
 index = -1;
 offset = 0;
@@ -16,4 +16,8 @@ for i = 1:length(cpustate.pages)
             break;
         end
     end
+end
+
+if index == -1
+    fprintf('Unable to find matching page for address: 0x%08x\n', address);
 end
