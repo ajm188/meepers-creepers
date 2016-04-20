@@ -73,6 +73,25 @@ switch (cpustate.regs(Register.v0))
     case 17
         % exit2
         exit(cpustate.regs(Register.a0));
+    case 101
+        % sock_write
+        % socket fd in $a0
+    case 102
+        % sock_read
+        % socket fd in $a0
+    case 103
+        % sock_close
+        % socket fd in $a0
+    case 110
+        % ssock_open
+        % put socket fd in $v1
+    case 112
+        % ssock_accept
+        % server socket fd in $a0
+        % put client socket fd in $v1
+    case 120
+        % sock_close_all
+        % close all open server sockets
     otherwise
         fprintf('Invalid syscall index: %d\n', cpustate.regs(Register.v0));
 end
