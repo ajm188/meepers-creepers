@@ -25,10 +25,16 @@ switch (cpustate.regs(Register.v0))
         disp('read_double is unsupported');
     case 8
         % read_string
-        fprintf('UNIMPLEMENTED: print_string\n');
+        data = input('', 's');
+        writeString(cpustate, cpustate.regs(Register.a0), ...
+            cpustate.regs(Register.a1), data);
     case 9
         % sbrk (memory allocation)
-        fprintf('UNIMPLEMENTED: sbrk(%d)\n', cpustate.regs(Register.a0));
+        pageindex = length(cpustate.pages)+1;
+        cpustate.pages{pageindex}.base_address = cpustate.next_allocation_address;
+        cpustate.pages{pageindex}.data = zeros(cpustate.regs(Register.a0), 1, 'uint8');
+        cpustate.next_allocation_address = cpustate.next_allocation_address + cpustate.regs(Register.a0);
+        cpustate.regs(Register.v0) = cpustate.pages{pageindex}.base_address;
     case 10
         % exit
         exit(0);
@@ -43,12 +49,27 @@ switch (cpustate.regs(Register.v0))
         end
     case 13
         % open
+        filename = readString(cpustate, cpustate.regs(Register.a0));
+        if cpustate.regs(Register.a1) == 0
+            mode = 'r';
+        else
+            mode = 'w';
+        end
+        cpustate.regs(Register.v0) = fopen(filename, mode);
     case 14
         % read
+        readdata = fread(cpustate.regs(Register.a0), cpustate.regs(Register.a2));
+        writeBuffer(cpustate, cpustate.regs(Register.a1), length(readdata), readdata);
+        cpustate.regs(Register.v0) = length(readdata);
     case 15
         % write
+        fwrite(cpustate.regs(Register.a0), ...
+            readBuffer(cpustate.regs(Register.a1), cpustate.regs(Register.a2)));
+        cpustate.regs(Register.v0) = cpustate.regs(Register.a2);
     case 16
         % close
+        fclose(cpustate.regs(Register.a0));
+        cpustate.regs(Register.v0) = 0;
     case 17
         % exit2
         exit(cpustate.regs(Register.a0));
