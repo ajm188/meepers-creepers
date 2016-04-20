@@ -105,7 +105,7 @@ switch (cpustate.regs(Register.v0))
         % sock_close
         % socket fd in $a0
         fd = cpustate.regs(Register.a0);
-        socket = cpustate.sockets(fd);
+        socket = cpustate.sockets{fd};
         socket.close();
     case 110
         % ssock_open
