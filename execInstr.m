@@ -125,10 +125,13 @@ switch (opCode(instr))
         cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 1);
     case hex2dec('2B')
         % sw
+        writeMemory(cpustate, cpustate.regs(rs) + immediate, 4, cpustate.regs(rt));
     case hex2dec('29')
         % sh
+        writeMemory(cpustate, cpustate.regs(rs) + immediate, 2, cpustate.regs(rt));
     case hex2dec('28')
         % sb
+        writeMemory(cpustate, cpustate.regs(rs) + immediate, 1, cpustate.regs(rt));
     case hex2dec('F')
         % lui
         cpustate.regs(rt) = bitshift(immediate, 16);
