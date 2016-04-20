@@ -8,6 +8,10 @@ function cpustate = execInstr(cpustate, instr)
 dumpRegs(cpustate.regs);
 dumpOpcode(instr);
 
+% Branching instructions depend on PC being incremented
+% before executing the instruction
+cpustate.pc = cpustate.pc + 4;
+
 % Unpack I and J forms now since they don't conflict with each other.
 % We'll use the correct unpacked form when executing.
 [rs, rt, immediate] = unpackI(instr);
@@ -94,6 +98,7 @@ switch (opCode(instr))
                 cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
             case hex2dec('8')
                 % jr
+                cpustate.pc = cpustate.regs(rs);
             case hex2dec('C')
                 % syscall
                 cpustate = dispatchSyscall(cpustate);
@@ -146,18 +151,28 @@ switch (opCode(instr))
         cpustate.regs(rt) = (cpustate.regs(rs) < immediate);
     case hex2dec('4')
         % beq
+        cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
+        if (cpustate.regs(rs) == cpustate.regs(rt))
+            cpustate.pc = computeBranchTarget(cpustate.pc-4, address);
+        end
     case hex2dec('5')
         % bne
+        cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
+        if (cpustate.regs(rs) ~= cpustate.regs(rt))
+            cpustate.pc = computeBranchTarget(cpustate.pc-4, address);
+        end
     case hex2dec('2')
         % j
+        cpustate.pc = computeBranchTarget(cpustate.pc, address);
     case hex2dec('3')
         % jal
+        cpustate.regs(Register.ra) = cpustate.pc + 4;
+        cpustate.pc = computeBranchTarget(cpustate.pc, address);
     otherwise
         % Illegal instruction - halt core
         disp(instr);
         cpustate.halted = 1;
 end
-cpustate.pc = cpustate.pc + 4;
 end
 
 function type = instrType(instr)
@@ -346,4 +361,9 @@ for i = 1:length(regs)
         fprintf('$%s = 0x%08x = %d\n', regidx2name(i), regs(i), regs(i));
     end
 end
+end
+
+% Compute branch target
+function target = computeBranchTarget(pc, offset)
+target = bitand(pc, bitcmp(hex2dec('F0000000'))) + (offset*4);
 end
