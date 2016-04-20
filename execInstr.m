@@ -6,6 +6,7 @@
 
 function cpustate = execInstr(cpustate, instr)
 dumpRegs(cpustate.regs);
+fprintf('0x%08x - ', cpustate.pc);
 dumpOpcode(instr);
 
 % Branching instructions depend on PC being incremented
@@ -151,23 +152,25 @@ switch (opCode(instr))
         cpustate.regs(rt) = (cpustate.regs(rs) < immediate);
     case hex2dec('4')
         % beq
+        taken = cpustate.regs(rs) == cpustate.regs(rt);
         cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
-        if (cpustate.regs(rs) == cpustate.regs(rt))
+        if (taken)
             cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
         end
     case hex2dec('5')
         % bne
+        taken = cpustate.regs(rs) ~= cpustate.regs(rt);
         cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
-        if (cpustate.regs(rs) ~= cpustate.regs(rt))
+        if (taken)
             cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
         end
     case hex2dec('2')
         % j
-        cpustate.pc = computeBranchTarget(cpustate.pc, address);
+        cpustate.pc = computeJumpTarget(cpustate.pc, address);
     case hex2dec('3')
         % jal
-        cpustate.regs(Register.ra) = cpustate.pc + 4;
-        cpustate.pc = computeBranchTarget(cpustate.pc, address);
+        cpustate.regs(Register.ra) = cpustate.pc;
+        cpustate.pc = computeJumpTarget(cpustate.pc, address);
     otherwise
         % Illegal instruction - halt core
         disp(instr);
@@ -217,7 +220,7 @@ function [rs, rt, immediate] = unpackI(instr)
 % These instructions contain 2 registers and an immediate value
 rs = bin2int(bitget(instr, 26:-1:22)) + 1;
 rt = bin2int(bitget(instr, 21:-1:17)) + 1;
-immediate = bin2int(bitget(instr, 16:-1:1));
+immediate = val2int16(bin2int(bitget(instr, 16:-1:1)));
 end
 
 function address = unpackJ(instr)
@@ -283,7 +286,8 @@ switch (opCode(instr))
             case hex2dec('7')
                 fprintf('srav');
             case hex2dec('8')
-                fprintf('jr');
+                fprintf('jr $%s\n', regidx2name(rs));
+                return;
             case hex2dec('C')
                 disp('syscall');
                 return;
@@ -366,6 +370,11 @@ end
 end
 
 % Compute branch target
+function target = computeJumpTarget(pc, offset)
+target = double(bitand(double(pc), hex2dec('F0000000'))) + (offset*4);
+end
+
+% Compute jump target
 function target = computeBranchTarget(pc, offset)
-target = bitand(pc, hex2dec('F0000000')) + (offset*4);
+target = pc + (offset*4);
 end

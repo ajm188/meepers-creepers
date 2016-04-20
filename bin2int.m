@@ -4,5 +4,5 @@ function num = bin2int(bin)
 
 % just raise each bit to a power of two (in decreasing order) and sum
 % it up.
-num = sum(bin.*(2.^uint32((length(bin)-1):-1:0)));
+num = sum(double(bin).*(2.^((length(bin)-1):-1:0)));
 end
