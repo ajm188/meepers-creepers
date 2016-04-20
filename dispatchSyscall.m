@@ -76,22 +76,60 @@ switch (cpustate.regs(Register.v0))
     case 101
         % sock_write
         % socket fd in $a0
+        % buffer address in $a1
+        % max-len in $a2
+        % bytes written or -1 in $v1
+        fd = cpustate.regs(Register.a0);
+        buffAddr = cpustate.regs(Register.a1);
+        maxLen = cpustate.regs(Register.a2);
+        socket = cpustate.sockets(fd);
+        bytes = readBuffer(cpustate, buffAddr, maxLen);
+        socket.getOutputStream().write(bytes);
+        cpustate.regs(Register.v1) = length(bytes);
     case 102
         % sock_read
         % socket fd in $a0
+        % buffer address in $a1
+        % max-len in $a2
+        % bytes read or -1 in $v1
+        fd = cpustate.regs(Register.a0);
+        buffAddr = cpustate.regs(Register.a1);
+        maxLen = cpustate.regs(Register.a2);
+        socket = cpustate.sockets(fd);
+        buff = zeros(1, maxLen, 'uint8');
+        bytesRead = socket.getInputStream().read(buff);
+        writeBuffer(cpustate, buffAddr, bytesRead, buff);
+        cpustate.regs(Register.v1) = bytesRead;
     case 103
         % sock_close
         % socket fd in $a0
+        fd = cpustate.regs(Register.a0);
+        socket = cpustate.sockets(fd);
+        socket.close();
     case 110
         % ssock_open
         % put socket fd in $v1
+        import java.net.ServerSocket;
+        port = cpustate.regs(Register.a0);
+        sock = ServerSocket(port);
+        [cpustate, fd] = addSocket(cpustate, sock);
+        cpustate.regs(Register.v1) = fd;
     case 112
         % ssock_accept
         % server socket fd in $a0
         % put client socket fd in $v1
+        fd = cpustate.regs(Register.a0);
+        server = cpustate.sockets(fd);
+        client = server.accept;
+        [cpustate, client_fd] = addSocket(client, fd);
+        cpustate.regs(Register.v1) = client_fd;
     case 120
         % sock_close_all
         % close all open server sockets
+        for i = 1:length(cpustate.sockets)
+            cpustate.sockets(i).close();
+        end
+        cpustate.sockets = [];
     otherwise
         fprintf('Invalid syscall index: %d\n', cpustate.regs(Register.v0));
 end
