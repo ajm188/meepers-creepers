@@ -3,6 +3,7 @@ function execProg(name)
 cpustate.regs = zeros(32, 1, 'int32');
 cpustate.reg_hi = 0;
 cpustate.reg_lo = 0;
+cpustate.sockets = [];
 
 % Load the code page
 cpustate.pages{1}.base_address = hex2dec('20000000');
