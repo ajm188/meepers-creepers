@@ -164,6 +164,13 @@ switch (opCode(instr))
         if (taken)
             cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
         end
+    case hex2dec('1')
+        % bltz
+        taken = cpustate.regs(rs) < cpustate.regs(rt);
+        cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
+        if (taken)
+            cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
+        end
     case hex2dec('2')
         % j
         cpustate.pc = computeJumpTarget(cpustate.pc, address);
