@@ -156,23 +156,20 @@ switch (opcode)
     case 4
         % beq
         taken = cpustate.regs(rs) == cpustate.regs(rt);
-        cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
         if (taken)
-            cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
+            cpustate.pc = computeBranchTarget(cpustate.pc, immediate);
         end
     case 5
         % bne
         taken = cpustate.regs(rs) ~= cpustate.regs(rt);
-        cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
         if (taken)
-            cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
+            cpustate.pc = computeBranchTarget(cpustate.pc, immediate);
         end
     case 1
         % bltz
         taken = cpustate.regs(rs) < cpustate.regs(rt);
-        cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
         if (taken)
-            cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
+            cpustate.pc = computeBranchTarget(cpustate.pc, immediate);
         end
     case 2
         % j
