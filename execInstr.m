@@ -15,104 +15,102 @@ end
 % before executing the instruction
 cpustate.pc = cpustate.pc + 4;
 
-% Unpack I and J forms now since they don't conflict with each other.
-% We'll use the correct unpacked form when executing.
-[rs, rt, immediate] = unpackI(instr);
-address = unpackJ(instr);
-
 % TODO(Cam): Fix signedness and overflow/underflow behavior of arithmetic
 % instructions. Fix arithmetic shift behavior.
-switch (opCode(instr))
-    case 0
-        % R-type instruction. Have to switch on funct
-        [rs, rt, rd, shamt, funct] = unpackR(instr);
-        switch (funct)
-            case 32
-                % add
-                cpustate.regs(rd) = cpustate.regs(rs) + cpustate.regs(rt);
-            case 33
-                % addu
-                cpustate.regs(rd) = cpustate.regs(rs) + cpustate.regs(rt);
-            case 34
-                % sub
-                cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
-            case 35
-                % subu
-                cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
-            case 22
-                % mult
-                product = cpustate.regs(rs) * cpustate.regs(rt);
-                cpustate.reg_lo = int32(product);
-                cpustate.reg_hi = int32(bitshift(product, -32));
-            case 23
-                % multu
-                product = cpustate.regs(rs) * cpustate.regs(rt);
-                cpustate.reg_lo = val2int32(product);
-                cpustate.reg_hi = val2int32(bitshift(product, -32));
-            case 26
-                % div
-                cpustate.reg_lo = cpustate.regs(rs) / cpustate.regs(rt);
-                cpustate.reg_hi = mod(cpustate.regs(rs), cpustate.regs(rt));
-            case 27
-                % divu
-                cpustate.reg_lo = cpustate.regs(rs) / cpustate.regs(rt);
-                cpustate.reg_hi = mod(cpustate.regs(rs), cpustate.regs(rt));
-            case 16
-                % mfhi
-                cpustate.regs(rd) = cpustate.reg_hi;
-            case 18
-                % mflo
-                cpustate.regs(rd) = cpustate.reg_lo;
-            case 36
-                % and
-                cpustate.regs(rd) = bitand(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
-            case 37
-                % or
-                cpustate.regs(rd) = bitor(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
-            case 38
-                % xor
-                cpustate.regs(rd) = bitxor(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
-            case 39
-                % nor
-                cpustate.regs(rd) = bitcmp(bitor(cpustate.regs(rs), cpustate.regs(rt), 'uint32'), 'uint32');
-            case 42
-                % slt
-                cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
-            case 43
-                % sltu
-                cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
-            case 0
-                % sll
-                cpustate.regs(rd) = bitshift(cpustate.regs(rt), shamt);
-            case 2
-                % srl
-                cpustate.regs(rd) = bitshift(cpustate.regs(rt), -shamt);
-            case 3
-                % sra
-                cpustate.regs(rd) = bitshift(cpustate.regs(rt), -shamt);
-            case 4
-                % sllv
-                cpustate.regs(rd) = bitshift(cpustate.regs(rt), cpustate.regs(rs));
-            case 6
-                % srlv
-                cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
-            case 7
-                % srav
-                cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
-            case 8
-                % jr
-                if rs == Register.ra
-                   cpustate.callframes(length(cpustate.callframes)) = [];
-                end
-                cpustate.pc = cpustate.regs(rs);
-            case 12
-                % syscall
-                cpustate = dispatchSyscall(cpustate);
-            otherwise
-                % Illegal instruction - halt core
-                disp(instr);
-                cpustate.halted = 1;
-        end
+opcode = opCode(instr);
+if ~opcode
+    % R-type instruction. Have to switch on funct
+    [rs, rt, rd, shamt, funct] = unpackR(instr);
+    switch (funct)
+        case 32
+            % add
+            cpustate.regs(rd) = cpustate.regs(rs) + cpustate.regs(rt);
+        case 33
+            % addu
+            cpustate.regs(rd) = cpustate.regs(rs) + cpustate.regs(rt);
+        case 34
+            % sub
+            cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
+        case 35
+            % subu
+            cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
+        case 22
+            % mult
+            product = cpustate.regs(rs) * cpustate.regs(rt);
+            cpustate.reg_lo = int32(product);
+            cpustate.reg_hi = int32(bitshift(product, -32));
+        case 23
+            % multu
+            product = cpustate.regs(rs) * cpustate.regs(rt);
+            cpustate.reg_lo = val2int32(product);
+            cpustate.reg_hi = val2int32(bitshift(product, -32));
+        case 26
+            % div
+            cpustate.reg_lo = cpustate.regs(rs) / cpustate.regs(rt);
+            cpustate.reg_hi = mod(cpustate.regs(rs), cpustate.regs(rt));
+        case 27
+            % divu
+            cpustate.reg_lo = cpustate.regs(rs) / cpustate.regs(rt);
+            cpustate.reg_hi = mod(cpustate.regs(rs), cpustate.regs(rt));
+        case 16
+            % mfhi
+            cpustate.regs(rd) = cpustate.reg_hi;
+        case 18
+            % mflo
+            cpustate.regs(rd) = cpustate.reg_lo;
+        case 36
+            % and
+            cpustate.regs(rd) = bitand(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
+        case 37
+            % or
+            cpustate.regs(rd) = bitor(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
+        case 38
+            % xor
+            cpustate.regs(rd) = bitxor(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
+        case 39
+            % nor
+            cpustate.regs(rd) = bitcmp(bitor(cpustate.regs(rs), cpustate.regs(rt), 'uint32'), 'uint32');
+        case 42
+            % slt
+            cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
+        case 43
+            % sltu
+            cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
+        case 0
+            % sll
+            cpustate.regs(rd) = bitshift(cpustate.regs(rt), shamt);
+        case 2
+            % srl
+            cpustate.regs(rd) = bitshift(cpustate.regs(rt), -shamt);
+        case 3
+            % sra
+            cpustate.regs(rd) = bitshift(cpustate.regs(rt), -shamt);
+        case 4
+            % sllv
+            cpustate.regs(rd) = bitshift(cpustate.regs(rt), cpustate.regs(rs));
+        case 6
+            % srlv
+            cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
+        case 7
+            % srav
+            cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
+        case 8
+            % jr
+            if rs == Register.ra
+               cpustate.callframes(length(cpustate.callframes)) = [];
+            end
+            cpustate.pc = cpustate.regs(rs);
+        case 12
+            % syscall
+            cpustate = dispatchSyscall(cpustate);
+        otherwise
+            % Illegal instruction - halt core
+            disp(instr);
+            cpustate.halted = 1;
+    end
+else
+[rs, rt, immediate] = unpackI(instr);
+switch (opcode)
     case 8
         % addi
         cpustate.regs(rt) = cpustate.regs(rs) + immediate;
@@ -178,9 +176,11 @@ switch (opCode(instr))
         end
     case 2
         % j
+        address = unpackJ(instr);
         cpustate.pc = computeJumpTarget(cpustate.pc, address);
     case 3
         % jal
+        address = unpackJ(instr);
         cpustate.regs(Register.ra) = cpustate.pc;
         cpustate.callframes = [cpustate.callframes cpustate.pc];
         cpustate.pc = computeJumpTarget(cpustate.pc, address);
@@ -188,6 +188,7 @@ switch (opCode(instr))
         % Illegal instruction - halt core
         disp(instr);
         cpustate.halted = 1;
+end
 end
 end
 
