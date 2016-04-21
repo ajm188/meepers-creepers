@@ -98,12 +98,9 @@ switch (cpustate.regs(Register.v0))
         maxLen = cpustate.regs(Register.a2);
         socket = cpustate.sockets{fd};
         buff = [];
-        nextByte = socket.getInputStream().read();
-        while nextByte >= 0 && length(buff) < maxLen && socket.getInputStream().available() > 0
-            buff = [buff nextByte];
-            nextByte = socket.getInputStream().read();
+        while length(buff) < maxLen && socket.getInputStream().available() > 0
+            buff = [buff socket.getInputStream().read()];
         end
-        buff = [buff 0];
         cpustate = writeBuffer(cpustate, buffAddr, length(buff), buff);
         cpustate.regs(Register.v1) = length(buff);
     case 103
