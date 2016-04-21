@@ -87,8 +87,12 @@ switch (cpustate.regs(Register.v0))
         socket = cpustate.sockets{fd};
         if maxLen > 0
             bytes = readBuffer(cpustate, buffAddr, maxLen);
-            socket.getOutputStream().write(bytes);
-            cpustate.regs(Register.v1) = length(bytes);
+            try
+                socket.getOutputStream().write(bytes);
+                cpustate.regs(Register.v1) = length(bytes);
+            catch
+                cpustate.regs(Register.v1) = -1;
+            end
         else
             cpustate.regs(Register.v1) = 0;
         end
