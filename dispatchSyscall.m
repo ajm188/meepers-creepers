@@ -56,20 +56,21 @@ switch (cpustate.regs(Register.v0))
         else
             mode = 'w';
         end
-        cpustate.regs(Register.v0) = fopen(filename, mode);
+        a = fopen(filename, mode);
+        cpustate.regs(Register.v0) = a;
     case 14
         % read
-        readdata = fread(cpustate.regs(Register.a0), cpustate.regs(Register.a2));
+        readdata = fread(double(cpustate.regs(Register.a0)), cpustate.regs(Register.a2));
         cpustate = writeBuffer(cpustate, cpustate.regs(Register.a1), length(readdata), readdata);
         cpustate.regs(Register.v0) = length(readdata);
     case 15
         % write
-        fwrite(cpustate.regs(Register.a0), ...
-            readBuffer(cpustate.regs(Register.a1), cpustate.regs(Register.a2)));
+        fwrite(double(cpustate.regs(Register.a0)), ...
+            readBuffer(cpustate, cpustate.regs(Register.a1), cpustate.regs(Register.a2)));
         cpustate.regs(Register.v0) = cpustate.regs(Register.a2);
     case 16
         % close
-        fclose(cpustate.regs(Register.a0));
+        fclose(double(cpustate.regs(Register.a0)));
         cpustate.regs(Register.v0) = 0;
     case 17
         % exit2
@@ -84,9 +85,13 @@ switch (cpustate.regs(Register.v0))
         buffAddr = cpustate.regs(Register.a1);
         maxLen = cpustate.regs(Register.a2);
         socket = cpustate.sockets{fd};
-        bytes = readBuffer(cpustate, buffAddr, maxLen);
-        socket.getOutputStream().write(bytes);
-        cpustate.regs(Register.v1) = length(bytes);
+        if maxLen > 0
+            bytes = readBuffer(cpustate, buffAddr, maxLen);
+            socket.getOutputStream().write(bytes);
+            cpustate.regs(Register.v1) = length(bytes);
+        else
+            cpustate.regs(Register.v1) = 0;
+        end
     case 102
         % sock_read
         % socket fd in $a0
