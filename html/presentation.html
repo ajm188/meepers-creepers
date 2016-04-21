@@ -1,0 +1,112 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <link rel="stylesheet" href="reveal.js/css/reveal.css"/>
+    <link rel="stylesheet" href="reveal.js/css/theme/solarized.css"/>
+
+    <script src="reveal.js/lib/js/head.min.js"></script>
+    <script src="reveal.js/js/reveal.js"></script>
+  </head>
+
+  <body>
+    <div class="reveal slide" role="application">
+      <div class="slides">
+        <section>
+        <h1>Meepers Creepers</h1>
+        <h2>MIPS CPU Emulator in MatLab</h2>
+        <p>Cameron Gutman and Andrew Mason</p>
+        </section>
+
+        <section>
+        <h1>What's an emulator?</h1>
+        <p>Hardware or software that enables one computer system
+        (<strong>host</strong>) to behave like another computer system
+        (<strong>guest</strong>).
+        </p>
+        <ul>
+          <li class="fragment">Our host: MatLab</li>
+          <li class="fragment">Our guest: MIPS</li>
+        </ul>
+        </section>
+
+        <section>
+        <h1>MIPS</h1>
+        <ul>
+            <li class="fragment">Instruction Set Architecture (ISA)</li>
+            <li class="fragment">Low-level assembly instructions
+                <ul>
+                    <li class="fragment">"move this value to this register"</li>
+                    <li class="fragment">"store this byte at this address"</li>
+                </ul>
+            </li>
+        </ul>
+        </section>
+
+        <section>
+        <h1>Emulation Steps</h1>
+        <ol>
+            <li>
+                Read assembled binary of machine instructions.
+                <ul>
+                    <li>Parse into op code and arguments.</li>
+                </ul>
+            </li>
+            <li>
+                Determine what instruction is trying to be executed.
+            </li>
+            <li>
+                Invoke our emulation of the instruction instead.
+            </li>
+            <li>
+                Update CPU state
+                <ul>
+                    <li>memory pages</li>
+                    <li>register values</li>
+                    <li>program counter</li>
+                    <li>etc</li>
+                </ul>
+            </li>
+        </ol>
+        </section>
+
+        <section>
+        <h1>yams</h1>
+        <ul>
+            <li>Spring 2015 EECS 314 Project</li>
+            <li>HTTP Server in MIPS Assembly</li>
+            <li>
+                Runs on meepers-creepers
+                <ul>
+                    <li>
+                        Had to implement custom Socket syscalls to support this
+                    </li>
+                    <li>Currently serving this presentation!</li>
+                </ul>
+            </li>
+        </ul>
+        </section>
+
+        <section>
+        <h1>Demo!</h1>
+        <ul>
+          <!-- this works, sometimes-->
+          <li><a href="/index.html">Simple Page</a></li>
+        </ul>
+        </section>
+
+        <section>
+        <h1>Questions?</h1>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      Reveal.initialize({
+        controls: true,
+        progress: true,
+        center: true,
+        transition: 'convex',
+      });
+    </script>
+  </body>
+</html>
