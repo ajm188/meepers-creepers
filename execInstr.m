@@ -34,12 +34,12 @@ if ~opcode
         case 35
             % subu
             cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
-        case 22
+        case 24
             % mult
             product = cpustate.regs(rs) * cpustate.regs(rt);
             cpustate.reg_lo = int32(product);
             cpustate.reg_hi = int32(bitshift(product, -32));
-        case 23
+        case 25
             % multu
             product = cpustate.regs(rs) * cpustate.regs(rt);
             cpustate.reg_lo = val2int32(product);
@@ -100,12 +100,17 @@ if ~opcode
                cpustate.callframes(length(cpustate.callframes)) = [];
             end
             cpustate.pc = cpustate.regs(rs);
+        case 11
+            % movn
+            if cpustate.regs(rt)
+                cpustate.regs(rd) = cpustate.regs(rs);
+            end
         case 12
             % syscall
             cpustate = dispatchSyscall(cpustate);
         otherwise
             % Illegal instruction - halt core
-            disp(instr);
+            fprintf('Bad opcode at: 0x%08x\n', cpustate.pc-4);
             cpustate.halted = 1;
     end
 else
@@ -166,11 +171,34 @@ switch (opcode)
             cpustate.pc = computeBranchTarget(cpustate.pc, immediate);
         end
     case 1
-        % bltz
-        taken = cpustate.regs(rs) < cpustate.regs(rt);
-        if (taken)
+        switch (rt-1)
+            case 0
+                % bltz
+                taken = cpustate.regs(rs) < 0;
+                if (taken)
+                    cpustate.pc = computeBranchTarget(cpustate.pc, immediate);
+                end
+                
+            case 17
+                % bgezal
+                taken = cpustate.regs(rs) >= 0;
+                if (taken)
+                    cpustate.regs(Register.ra) = cpustate.pc;
+                    cpustate.callframes = [cpustate.callframes cpustate.pc];
+                    cpustate.pc = computeBranchTarget(cpustate.pc, immediate);
+                end
+                
+            otherwise
+                % Illegal instruction - halt core
+                fprintf('Bad opcode at: 0x%08x\n', cpustate.pc-4);
+                cpustate.halted = 1;
+        end
+    case 7
+        % bgtz
+        if cpustate.regs(rs) > 0
             cpustate.pc = computeBranchTarget(cpustate.pc, immediate);
         end
+        
     case 2
         % j
         address = unpackJ(instr);
@@ -183,7 +211,7 @@ switch (opcode)
         cpustate.pc = computeJumpTarget(cpustate.pc, address);
     otherwise
         % Illegal instruction - halt core
-        disp(instr);
+        fprintf('Bad opcode at: 0x%08x\n', cpustate.pc-4);
         cpustate.halted = 1;
 end
 end
@@ -303,8 +331,6 @@ switch (opCode(instr))
                 disp('syscall');
                 return;
             otherwise
-                disp(funct(instr));
-                % error. wtf happened?
                 return;
         end
         fprintf(' $%s $%s $%s %d\n', regidx2name(rd), regidx2name(rs), ...
@@ -351,8 +377,6 @@ switch (opCode(instr))
             case hex2dec('3')
                 fprintf('jal');
             otherwise
-                % error. wtf happened?
-                disp(instr);
                 return;
         end
         fprintf(' 0x%08x\n', address);
