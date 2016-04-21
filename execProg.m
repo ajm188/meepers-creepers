@@ -38,7 +38,7 @@ cpustate.regs(Register.sp) = cpustate.pages{3}.base_address;
 % Initialize callstack tracker
 cpustate.callframes = [];
 cpustate.loops = 0;
-cpustate.dmpdelay = -1;
+cpustate.dmpdelay = Inf;
 
 while ~cpustate.halted
     instr = readMemory(cpustate, cpustate.pc, 4);
