@@ -97,10 +97,15 @@ switch (cpustate.regs(Register.v0))
         buffAddr = cpustate.regs(Register.a1);
         maxLen = cpustate.regs(Register.a2);
         socket = cpustate.sockets{fd};
-        buff = zeros(1, maxLen, 'uint8');
-        bytesRead = socket.getInputStream().read(buff);
-        cpustate = writeBuffer(cpustate, buffAddr, bytesRead, buff);
-        cpustate.regs(Register.v1) = bytesRead;
+        buff = [];
+        nextByte = socket.getInputStream().read();
+        while nextByte >= 0 && length(buff) < maxLen && socket.getInputStream().available() > 0
+            buff = [buff nextByte];
+            nextByte = socket.getInputStream().read();
+        end
+        buff = [buff 0];
+        cpustate = writeBuffer(cpustate, buffAddr, length(buff), buff);
+        cpustate.regs(Register.v1) = length(buff);
     case 103
         % sock_close
         % socket fd in $a0
@@ -111,8 +116,11 @@ switch (cpustate.regs(Register.v0))
         % ssock_open
         % put socket fd in $v1
         import java.net.ServerSocket;
+        import java.net.InetSocketAddress;
         port = cpustate.regs(Register.a0);
-        sock = ServerSocket(port);
+        sock = ServerSocket();
+        sock.setReuseAddress(1);
+        sock.bind(InetSocketAddress(port));
         [cpustate, fd] = addSocket(cpustate, sock);
         cpustate.regs(Register.v1) = fd;
     case 112
