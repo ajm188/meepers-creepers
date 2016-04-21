@@ -5,9 +5,11 @@
 % these modified indices.
 
 function cpustate = execInstr(cpustate, instr)
-dumpRegs(cpustate.regs);
-fprintf('0x%08x - ', cpustate.pc);
-dumpOpcode(instr);
+if cpustate.loops >= cpustate.dmpdelay
+    dumpRegs(cpustate.regs);
+    fprintf('0x%08x - ', cpustate.pc);
+    dumpOpcode(instr);
+end
 
 % Branching instructions depend on PC being incremented
 % before executing the instruction
@@ -21,86 +23,89 @@ address = unpackJ(instr);
 % TODO(Cam): Fix signedness and overflow/underflow behavior of arithmetic
 % instructions. Fix arithmetic shift behavior.
 switch (opCode(instr))
-    case hex2dec('0')
+    case 0
         % R-type instruction. Have to switch on funct
         [rs, rt, rd, shamt, funct] = unpackR(instr);
         switch (funct)
-            case hex2dec('20')
+            case 32
                 % add
                 cpustate.regs(rd) = cpustate.regs(rs) + cpustate.regs(rt);
-            case hex2dec('21')
+            case 33
                 % addu
                 cpustate.regs(rd) = cpustate.regs(rs) + cpustate.regs(rt);
-            case hex2dec('22')
+            case 34
                 % sub
                 cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
-            case hex2dec('23')
+            case 35
                 % subu
                 cpustate.regs(rd) = cpustate.regs(rs) - cpustate.regs(rt);
-            case hex2dec('18')
+            case 22
                 % mult
                 product = cpustate.regs(rs) * cpustate.regs(rt);
                 cpustate.reg_lo = int32(product);
                 cpustate.reg_hi = int32(bitshift(product, -32));
-            case hex2dec('19')
+            case 23
                 % multu
                 product = cpustate.regs(rs) * cpustate.regs(rt);
-                cpustate.reg_lo = uint32(product);
-                cpustate.reg_hi = uint32(bitshift(product, -32));
-            case hex2dec('1A')
+                cpustate.reg_lo = val2int32(product);
+                cpustate.reg_hi = val2int32(bitshift(product, -32));
+            case 26
                 % div
                 cpustate.reg_lo = cpustate.regs(rs) / cpustate.regs(rt);
                 cpustate.reg_hi = mod(cpustate.regs(rs), cpustate.regs(rt));
-            case hex2dec('1B')
+            case 27
                 % divu
                 cpustate.reg_lo = cpustate.regs(rs) / cpustate.regs(rt);
                 cpustate.reg_hi = mod(cpustate.regs(rs), cpustate.regs(rt));
-            case hex2dec('10')
+            case 16
                 % mfhi
                 cpustate.regs(rd) = cpustate.reg_hi;
-            case hex2dec('12')
+            case 18
                 % mflo
                 cpustate.regs(rd) = cpustate.reg_lo;
-            case hex2dec('24')
+            case 36
                 % and
-                cpustate.regs(rd) = bitand(cpustate.regs(rs), cpustate.regs(rt), 'int32');
-            case hex2dec('25')
+                cpustate.regs(rd) = bitand(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
+            case 37
                 % or
-                cpustate.regs(rd) = bitor(cpustate.regs(rs), cpustate.regs(rt), 'int32');
-            case hex2dec('26')
+                cpustate.regs(rd) = bitor(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
+            case 38
                 % xor
-                cpustate.regs(rd) = bitxor(cpustate.regs(rs), cpustate.regs(rt), 'int32');
-            case hex2dec('27')
+                cpustate.regs(rd) = bitxor(cpustate.regs(rs), cpustate.regs(rt), 'uint32');
+            case 39
                 % nor
-                cpustate.regs(rd) = bitcmp(bitor(cpustate.regs(rs), cpustate.regs(rt), 'int32'), 'int32');
-            case hex2dec('2A')
+                cpustate.regs(rd) = bitcmp(bitor(cpustate.regs(rs), cpustate.regs(rt), 'uint32'), 'uint32');
+            case 42
                 % slt
                 cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
-            case hex2dec('2B')
+            case 43
                 % sltu
                 cpustate.regs(rd) = (cpustate.regs(rs) < cpustate.regs(rt));
-            case hex2dec('0')
+            case 0
                 % sll
                 cpustate.regs(rd) = bitshift(cpustate.regs(rt), shamt);
-            case hex2dec('2')
+            case 2
                 % srl
                 cpustate.regs(rd) = bitshift(cpustate.regs(rt), -shamt);
-            case hex2dec('3')
+            case 3
                 % sra
                 cpustate.regs(rd) = bitshift(cpustate.regs(rt), -shamt);
-            case hex2dec('4')
+            case 4
                 % sllv
                 cpustate.regs(rd) = bitshift(cpustate.regs(rt), cpustate.regs(rs));
-            case hex2dec('6')
+            case 6
                 % srlv
                 cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
-            case hex2dec('7')
+            case 7
                 % srav
                 cpustate.regs(rd) = bitshift(cpustate.regs(rt), -cpustate.regs(rs));
-            case hex2dec('8')
+            case 8
                 % jr
+                if rs == Register.ra
+                   cpustate.callframes(length(cpustate.callframes)) = [];
+                end
                 cpustate.pc = cpustate.regs(rs);
-            case hex2dec('C')
+            case 12
                 % syscall
                 cpustate = dispatchSyscall(cpustate);
             otherwise
@@ -108,75 +113,76 @@ switch (opCode(instr))
                 disp(instr);
                 cpustate.halted = 1;
         end
-    case hex2dec('8')
+    case 8
         % addi
         cpustate.regs(rt) = cpustate.regs(rs) + immediate;
-    case hex2dec('9')
+    case 9
         % addiu
         cpustate.regs(rt) = cpustate.regs(rs) + immediate;
-    case hex2dec('23')
+    case 35
         % lw
-        cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 4);
-    case hex2dec('21')
+        cpustate.regs(rt) = val2int32(readMemory(cpustate, cpustate.regs(rs) + immediate, 4));
+    case 33
         % lh
-        cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 2);
-    case hex2dec('25')
+        cpustate.regs(rt) = val2int16(readMemory(cpustate, cpustate.regs(rs) + immediate, 2));
+    case 37
         % lhu
         cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 2);
-    case hex2dec('20')
+    case 32
         % lb
-        cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 1);
-    case hex2dec('24')
+        cpustate.regs(rt) = val2int8(readMemory(cpustate, cpustate.regs(rs) + immediate, 1));
+    case 36
         % lbu
         cpustate.regs(rt) = readMemory(cpustate, cpustate.regs(rs) + immediate, 1);
-    case hex2dec('2B')
+    case 43
         % sw
         cpustate = writeMemory(cpustate, cpustate.regs(rs) + immediate, 4, cpustate.regs(rt));
-    case hex2dec('29')
+    case 41
         % sh
         cpustate = writeMemory(cpustate, cpustate.regs(rs) + immediate, 2, cpustate.regs(rt));
-    case hex2dec('28')
+    case 40
         % sb
         cpustate = writeMemory(cpustate, cpustate.regs(rs) + immediate, 1, cpustate.regs(rt));
-    case hex2dec('F')
+    case 15
         % lui
         cpustate.regs(rt) = bitshift(immediate, 16);
-    case hex2dec('C')
+    case 12
         % andi
         cpustate.regs(rt) = bitand(cpustate.regs(rs), immediate);
-    case hex2dec('D')
+    case 13
         % ori
         cpustate.regs(rt) = bitor(cpustate.regs(rs), immediate);
-    case hex2dec('A')
+    case 10
         % slti
         cpustate.regs(rt) = (cpustate.regs(rs) < immediate);
-    case hex2dec('4')
+    case 4
         % beq
         taken = cpustate.regs(rs) == cpustate.regs(rt);
         cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
         if (taken)
             cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
         end
-    case hex2dec('5')
+    case 5
         % bne
         taken = cpustate.regs(rs) ~= cpustate.regs(rt);
         cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
         if (taken)
             cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
         end
-    case hex2dec('1')
+    case 1
         % bltz
         taken = cpustate.regs(rs) < cpustate.regs(rt);
         cpustate = execInstr(cpustate, readMemory(cpustate, cpustate.pc, 4));
         if (taken)
             cpustate.pc = computeBranchTarget(cpustate.pc-4, immediate);
         end
-    case hex2dec('2')
+    case 2
         % j
         cpustate.pc = computeJumpTarget(cpustate.pc, address);
-    case hex2dec('3')
+    case 3
         % jal
         cpustate.regs(Register.ra) = cpustate.pc;
+        cpustate.callframes = [cpustate.callframes cpustate.pc];
         cpustate.pc = computeJumpTarget(cpustate.pc, address);
     otherwise
         % Illegal instruction - halt core
