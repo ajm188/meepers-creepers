@@ -20,6 +20,11 @@ uicontrol('Style', 'text', 'String', 'Enter program basename (without -code.bin 
         set(runButton, 'String', 'Run It!');
     end
 
+    % FIXME: This function doesn't work yet. RunIt() never returns
+    % from its callback which causes the callback thread to hang. This
+    % means the abort() callback is never delivered while execProg() is
+    % running. We will investigate throwing the emulation onto another
+    % thread for the final version.
     function abort(s, e)
         cpustate.halted = 1;
     end
