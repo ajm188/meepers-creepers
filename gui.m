@@ -3,7 +3,7 @@ f = figure('Name', 'Welcome to meepers creepers', 'MenuBar', 'none', 'Position',
 movegui(f, 'center');
 
 runButton = uicontrol('Style', 'pushbutton', 'String', 'Run It!', 'Callback', @runIt, 'Position', [25 25 80 25]);
-uicontrol('Style', 'pushbutton', 'String', 'Abort!', 'Callback', @abort, 'Position', [105 25 80 25]);
+abortButton = uicontrol('Style', 'pushbutton', 'Enable', 'off', 'String', 'Abort!', 'Callback', @abort, 'Position', [105 25 80 25]);
 progBox = uicontrol('Style', 'edit', 'String', 'asm/yams', 'Position', [200 100 100 40]);
 uicontrol('Style', 'text', 'String', 'Enter program basename (without -code.bin or -data.bin)',...
     'Position', [25 100 130 40]);
@@ -12,12 +12,14 @@ uicontrol('Style', 'text', 'String', 'Enter program basename (without -code.bin 
         progName = get(progBox, 'String');
         set(runButton, 'Enable', 'off');
         set(runButton, 'String', 'Running!');
+        set(abortButton, 'Enable', 'on');
         
-        % This function returns when the emulated program terminates
+        % Delete any old abort file
+        delete('shouldistop.txt');
+        
+        % Execution will happen in timer callbacks after
+        % this function returns.
         execProg(progName);
-        
-        set(runButton, 'Enable', 'on');
-        set(runButton, 'String', 'Run It!');
     end
 
     % FIXME: This function doesn't work yet. RunIt() never returns
@@ -26,6 +28,15 @@ uicontrol('Style', 'text', 'String', 'Enter program basename (without -code.bin 
     % running. We will investigate throwing the emulation onto another
     % thread for the final version.
     function abort(s, e)
-        cpustate.halted = 1;
+        
+        fid = fopen('shouldistop.txt', 'w');
+        if fid >= 0
+            fprintf(fid, 'Yes, you should stop');
+            fclose(fid);
+        end
+                
+        set(runButton, 'Enable', 'on');
+        set(runButton, 'String', 'Run It!');
+        set(abortButton, 'Enable', 'off');
     end
 end

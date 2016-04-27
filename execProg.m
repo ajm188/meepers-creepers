@@ -40,27 +40,54 @@ cpustate.callframes = [];
 cpustate.loops = 0;
 cpustate.dmpdelay = Inf;
 
-while ~cpustate.halted
-    instr = readMemory(cpustate, cpustate.pc, 4);
-    for i = 1:length(cpustate.breakpoints)
-        if cpustate.breakpoints(i) == cpustate.pc
-            break;
+start(timer('StartDelay', 0.01, 'TimerFcn', @executeCycle));
+
+    function executeCycle(~, ~)
+        for runs = 1:1000
+            instr = readMemory(cpustate, cpustate.pc, 4);
+            for i = 1:length(cpustate.breakpoints)
+                if cpustate.breakpoints(i) == cpustate.pc
+                    break;
+                end
+            end
+            cpustate.loops = cpustate.loops + 1;
+
+            % Execute the next MIPS instruction
+            cpustate = execInstr(cpustate, instr);
+
+            if cpustate.loops >= cpustate.dmpdelay
+                dumpPageArray(cpustate);
+                dumpCalls(cpustate);
+            end
+            
+            % Check if we're halted
+            if cpustate.halted
+                break;
+            end
         end
+        
+        if ~cpustate.halted
+            % Check if the GUI has requested us to stop
+            fid = fopen('shouldistop.txt');
+            if fid >= 0
+                % Delete the stop indicator
+                fclose(fid);
+                delete('shouldistop.txt');
+            else
+                % Start another 1000 cycles
+                start(timer('StartDelay', 0.01, 'TimerFcn', @executeCycle));
+                return;
+            end
+        end
+        
+        disp('CPU halted!');
+        for j = 1:length(cpustate.sockets)
+            cpustate.sockets{j}.close();
+        end
+        cpustate.sockets = {};
     end
-    cpustate.loops = cpustate.loops + 1;
-    
-    cpustate = execInstr(cpustate, instr);
-    
-    if cpustate.loops >= cpustate.dmpdelay
-        dumpPageArray(cpustate);
-        dumpCalls(cpustate);
-    end
 end
-for j = 1:length(cpustate.sockets)
-    cpustate.sockets{j}.close();
-end
-cpustate.sockets = {};
-end
+
 
 function dumpPageArray(cpustate)
 
