@@ -56,6 +56,10 @@ while ~cpustate.halted
         dumpCalls(cpustate);
     end
 end
+for j = 1:length(cpustate.sockets)
+    cpustate.sockets{j}.close();
+end
+cpustate.sockets = {};
 end
 
 function dumpPageArray(cpustate)
